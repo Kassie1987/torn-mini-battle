@@ -57,3 +57,6 @@ jobs:
           git add whitelist/whitelist.sig
           git commit -m "Update whitelist signature" || echo "No changes to commit"
           git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
