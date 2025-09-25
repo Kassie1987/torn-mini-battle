@@ -1,13 +1,8 @@
-name: Sign Whitelist
-
-on:
-  push:
-    paths:
-      - 'whitelist/whitelist.json'
-
 jobs:
   sign:
     runs-on: ubuntu-latest
+    env:
+      WHITELISTED_PRIVATE: ${{ secrets.WHITELISTED_PRIVATE }}
     steps:
       - uses: actions/checkout@v3
 
@@ -23,8 +18,12 @@ jobs:
           const crypto = require('crypto');
 
           const privateKey = process.env.WHITELISTED_PRIVATE;
-          const data = fs.readFileSync('whitelist/whitelist.json');
+          if (!privateKey) {
+            console.error("❌ No private key found in env.WHITELISTED_PRIVATE");
+            process.exit(1);
+          }
 
+          const data = fs.readFileSync('whitelist/whitelist.json');
           const sign = crypto.createSign('RSA-SHA256');
           sign.update(data);
           sign.end();
@@ -32,7 +31,7 @@ jobs:
           const signature = sign.sign(privateKey, 'base64');
           fs.writeFileSync('whitelist/whitelist.sig', signature);
 
-          console.log('Signature written to whitelist/whitelist.sig');
+          console.log('✅ Signature written to whitelist/whitelist.sig');
           EOF
 
       - name: Sign whitelist.json
@@ -45,5 +44,3 @@ jobs:
           git add whitelist/whitelist.sig
           git commit -m "Update whitelist signature"
           git push
-        env:
-          WHITELISTED_PRIVATE: ${{ secrets.WHITELISTED_PRIVATE }}
